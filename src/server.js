@@ -45,16 +45,21 @@ function writeGatewayConfig() {
   let cfg = {};
   try { cfg = JSON.parse(fs.readFileSync(configPath, "utf8")); } catch {}
 
+  cfg.gateway = cfg.gateway ?? {};
+
+  // Write the gateway token into config
+  cfg.gateway.token = GATEWAY_TOKEN;
+
   // Ensure our public origin is in the allowed list
-  const existing = cfg?.gateway?.controlUi?.allowedOrigins ?? [];
+  cfg.gateway.controlUi = cfg.gateway.controlUi ?? {};
+  const existing = cfg.gateway.controlUi.allowedOrigins ?? [];
   if (!existing.includes(PUBLIC_ORIGIN)) {
-    cfg.gateway = cfg.gateway ?? {};
-    cfg.gateway.controlUi = cfg.gateway.controlUi ?? {};
     cfg.gateway.controlUi.allowedOrigins = [...existing, PUBLIC_ORIGIN];
-    fs.mkdirSync(path.dirname(configPath), { recursive: true });
-    fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2));
     log("INFO", `Allowed origin added to config: ${PUBLIC_ORIGIN}`);
   }
+
+  fs.mkdirSync(path.dirname(configPath), { recursive: true });
+  fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2));
 }
 
 function startGateway() {
@@ -150,7 +155,7 @@ app.get("/setup", (_req, res) => {
 app.get("/setup/api/status", requireAuth, (_req, res) => {
   const configPath = path.join(STATE_DIR, "openclaw.json");
   const configured = fs.existsSync(configPath);
-  res.json({ gatewayReady, configured, stateDir: STATE_DIR });
+  res.json({ gatewayReady, configured, stateDir: STATE_DIR, gatewayToken: GATEWAY_TOKEN });
 });
 
 app.get("/setup/api/config", requireAuth, (_req, res) => {
