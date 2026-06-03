@@ -2,7 +2,7 @@
 
 One-click Railway deployment for [OpenClaw](https://github.com/openclaw/openclaw) — your self-hosted personal AI assistant.
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/YOUR_TEMPLATE_ID)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/Amritasha/openclaw-railway-template)
 
 ## What's included
 
