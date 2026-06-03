@@ -20,6 +20,13 @@ const SETUP_PASSWORD = process.env.SETUP_PASSWORD?.trim();
 const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN?.trim() || crypto.randomBytes(32).toString("hex");
 const OPENCLAW_ENTRY = process.env.OPENCLAW_ENTRY || "/usr/local/lib/node_modules/openclaw/dist/entry.js";
 
+// Derive the public origin from Railway env vars so the gateway allows it
+const PUBLIC_DOMAIN =
+  process.env.RAILWAY_PUBLIC_DOMAIN ||
+  process.env.RAILWAY_STATIC_URL ||
+  `localhost:${PORT}`;
+const PUBLIC_ORIGIN = PUBLIC_DOMAIN.startsWith("http") ? PUBLIC_DOMAIN : `https://${PUBLIC_DOMAIN}`;
+
 const SESSIONS = new Map();
 let gatewayReady = false;
 let gatewayProc = null;
@@ -33,8 +40,26 @@ function ensureDirs() {
   fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
 }
 
+function writeGatewayConfig() {
+  const configPath = process.env.OPENCLAW_CONFIG_PATH || path.join(STATE_DIR, "openclaw.json");
+  let cfg = {};
+  try { cfg = JSON.parse(fs.readFileSync(configPath, "utf8")); } catch {}
+
+  // Ensure our public origin is in the allowed list
+  const existing = cfg?.gateway?.controlUi?.allowedOrigins ?? [];
+  if (!existing.includes(PUBLIC_ORIGIN)) {
+    cfg.gateway = cfg.gateway ?? {};
+    cfg.gateway.controlUi = cfg.gateway.controlUi ?? {};
+    cfg.gateway.controlUi.allowedOrigins = [...existing, PUBLIC_ORIGIN];
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2));
+    log("INFO", `Allowed origin added to config: ${PUBLIC_ORIGIN}`);
+  }
+}
+
 function startGateway() {
   ensureDirs();
+  writeGatewayConfig();
   log("INFO", `Starting openclaw gateway on port ${INTERNAL_PORT}`);
 
   const env = {
