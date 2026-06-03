@@ -45,7 +45,7 @@ function startGateway() {
     OPENCLAW_WORKSPACE_DIR: WORKSPACE_DIR,
   };
 
-  gatewayProc = spawn(process.execPath, [OPENCLAW_ENTRY, "serve"], { env, stdio: "inherit" });
+  gatewayProc = spawn(process.execPath, [OPENCLAW_ENTRY, "gateway", "run", "--force", "--allow-unconfigured"], { env, stdio: "inherit" });
 
   gatewayProc.on("exit", (code) => {
     log("WARN", `Gateway exited with code ${code}, restarting in 5s`);
