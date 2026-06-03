@@ -43,12 +43,16 @@ function ensureDirs() {
 function writeGatewayConfig() {
   const configPath = process.env.OPENCLAW_CONFIG_PATH || path.join(STATE_DIR, "openclaw.json");
   let cfg = {};
-  try { cfg = JSON.parse(fs.readFileSync(configPath, "utf8")); } catch {}
+  try {
+    const raw = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    // Only keep known-safe top-level keys to avoid corrupting the config
+    const { gateway, workspace, channels, models, agent } = raw;
+    cfg = Object.fromEntries(
+      Object.entries({ gateway, workspace, channels, models, agent }).filter(([, v]) => v !== undefined)
+    );
+  } catch {}
 
   cfg.gateway = cfg.gateway ?? {};
-
-  // Write the gateway token into config
-  cfg.gateway.token = GATEWAY_TOKEN;
 
   // Ensure our public origin is in the allowed list
   cfg.gateway.controlUi = cfg.gateway.controlUi ?? {};
